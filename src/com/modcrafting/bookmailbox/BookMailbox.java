@@ -92,7 +92,7 @@ public class BookMailbox extends JavaPlugin implements Listener{
 				if(event.getClickedBlock().getRelative(BlockFace.UP).getState() instanceof Sign){
 					Sign sign = (Sign) event.getClickedBlock().getRelative(BlockFace.UP).getState();
 					if(sign.getLine(0).contains("[Mailbox]")){
-						if(sign.getLine(0).contains(event.getPlayer().getName())||event.getPlayer().hasPermission("bookmailbox.admin")){
+						if(sign.getLine(1).contains(event.getPlayer().getName())||event.getPlayer().hasPermission("bookmailbox.admin")){
 							int count = 0;
 							for(ItemStack item:((Chest)event.getClickedBlock().getState()).getInventory().getContents()){
 								if(item!=null&&item.getType().equals(Material.WRITTEN_BOOK)) count = count+1;
