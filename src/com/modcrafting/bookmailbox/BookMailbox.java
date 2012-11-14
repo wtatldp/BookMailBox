@@ -23,8 +23,14 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class BookMailbox extends JavaPlugin implements Listener{
+public class BookMailbox extends JavaPlugin implements Listener {
+	
 	HashMap<String, Location> box = new HashMap<String, Location>();
+	
+	
+	/**
+	 * Called by Bukkit when this plugin is disabled
+	 */
 	public void onDisable(){
 		YamlConfiguration config = (YamlConfiguration) this.getConfig();
 		for(String key: config.getKeys(false)){
@@ -35,6 +41,11 @@ public class BookMailbox extends JavaPlugin implements Listener{
 		this.saveConfig();
 		box.clear();
 	}
+	
+	
+	/**
+	 * Called by Bukkit when this plugin is enabled
+	 */
 	public void onEnable(){
 		this.getServer().getPluginManager().registerEvents(this, this);
 		this.getDataFolder().mkdir();
@@ -48,16 +59,30 @@ public class BookMailbox extends JavaPlugin implements Listener{
 		}		
 		loadMap();
 	}
+	
+	
+	/**
+	 * Loads the data located in config.yml into memory
+	 */
 	private void loadMap() {
         this.reloadConfig();
 		YamlConfiguration config = (YamlConfiguration) this.getConfig();
 		for(String s : config.getKeys(false)){
 			box.put(s, new Location(this.getServer().getWorld(config.getString(s+".World")), config.getDouble(s+".X"), config.getDouble(s+".Y"), config.getDouble(s+".Z")));
 		}
-		
 	}
+	
+	
+	/**
+	 * Event Handler
+	 * <p>
+	 * The main event handler for physical mailbox actions, including sign placement,
+	 *  mailbox sign activation, and mailbox chest access.
+	 *  
+	 * @param event  the PlayerInteractEvent as called by Bukkit
+	 */
 	@EventHandler
-	public void onSignPlace(PlayerInteractEvent event){
+	public void onPlayerInteract(PlayerInteractEvent event){
 		if(event.getAction().equals(Action.RIGHT_CLICK_BLOCK)){
 			if(event.getClickedBlock().getState() instanceof Sign){
 				Sign sign = (Sign) event.getClickedBlock().getState();
@@ -74,7 +99,13 @@ public class BookMailbox extends JavaPlugin implements Listener{
 						}
 					}
 					sign.setLine(0, ChatColor.DARK_BLUE+"[Mailbox]");
-					sign.setLine(1, ChatColor.BLUE+event.getPlayer().getName());
+					if (event.getPlayer().getName().length() > 15) {
+						sign.setLine(1, event.getPlayer().getName().substring(0, 15));
+						sign.setLine(2, event.getPlayer().getName().substring(15, 15));
+					} else {
+						sign.setLine(1, event.getPlayer().getName());
+						sign.setLine(2, "");
+					}
 					sign.setLine(3, ChatColor.DARK_GRAY+"0 of 27");
 					sign.update();
 					String name = event.getPlayer().getName();
@@ -92,10 +123,10 @@ public class BookMailbox extends JavaPlugin implements Listener{
 				if(event.getClickedBlock().getRelative(BlockFace.UP).getState() instanceof Sign){
 					Sign sign = (Sign) event.getClickedBlock().getRelative(BlockFace.UP).getState();
 					if(sign.getLine(0).contains("[Mailbox]")){
-						if(sign.getLine(1).contains(event.getPlayer().getName())||event.getPlayer().hasPermission("bookmailbox.admin")){
+						if((sign.getLine(1)+sign.getLine(2)).contains(event.getPlayer().getName())||event.getPlayer().hasPermission("bookmailbox.admin")){
 							int count = 0;
 							for(ItemStack item:((Chest)event.getClickedBlock().getState()).getInventory().getContents()){
-								if(item!=null&&item.getType().equals(Material.WRITTEN_BOOK)) count = count+1;
+								if(item!=null&&item.getType().equals(Material.WRITTEN_BOOK)) count += 1;
 							}
 							sign.setLine(3, ChatColor.DARK_GRAY+String.valueOf(count)+" of 27");
 							sign.update();
@@ -108,6 +139,16 @@ public class BookMailbox extends JavaPlugin implements Listener{
 			}
 		}
 	}
+	
+	
+	/**
+	 * Event Handler
+	 * <p>
+	 * Checks whether a mailbox is being destroyed and whether it
+	 * is allowed to be destroyed.
+	 * 
+	 * @param event  the BlockBreakEvent as called by Bukkit
+	 */
 	@EventHandler
 	public void onBlockBreak(BlockBreakEvent event){
 		for(BlockFace face: BlockFace.values()){
@@ -119,6 +160,14 @@ public class BookMailbox extends JavaPlugin implements Listener{
 		}
 			
 	}
+	
+	
+	/**
+	 * Command Handler
+	 * <p>
+	 * Handles the /mail command, performing checks on the mailbox status in
+	 * the process.
+	 */
 	public boolean onCommand(CommandSender sender, Command command, String commandLabel, String[] args) {
 		if(sender instanceof Player){
 			Player player = (Player) sender;
@@ -128,6 +177,10 @@ public class BookMailbox extends JavaPlugin implements Listener{
 				return true;
 			}
 			OfflinePlayer t = this.getServer().getOfflinePlayer(args[0]);
+			/*if(!player.getItemInHand().getType().equals(Material.WRITTEN_BOOK)) {
+				sender.sendMessage(ChatColor.RED+"You must have a book in your hand");
+				return true;
+			}*/
 			if(player.getItemInHand().getType().equals(Material.WRITTEN_BOOK)){
 				if(t!=null){
 					String rec = t.getName();
