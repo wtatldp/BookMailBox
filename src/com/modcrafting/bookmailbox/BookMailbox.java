@@ -162,6 +162,8 @@ public class BookMailbox extends JavaPlugin implements Listener {
 	}
 	
 	
+	
+	
 	/**
 	 * Command Handler
 	 * <p>
@@ -169,62 +171,95 @@ public class BookMailbox extends JavaPlugin implements Listener {
 	 * the process.
 	 */
 	public boolean onCommand(CommandSender sender, Command command, String commandLabel, String[] args) {
-		if(sender instanceof Player){
-			Player player = (Player) sender;
-			if(args.length<1) return false;
-			if(!player.hasPermission("bookmailbox.command")){
-				sender.sendMessage(ChatColor.RED+"You do not have the required permissions.");
-				return true;
-			}
-			OfflinePlayer t = this.getServer().getOfflinePlayer(args[0]);
-			/*if(!player.getItemInHand().getType().equals(Material.WRITTEN_BOOK)) {
-				sender.sendMessage(ChatColor.RED+"You must have a book in your hand");
-				return true;
-			}*/
-			if(player.getItemInHand().getType().equals(Material.WRITTEN_BOOK)){
-				if(t!=null){
-					String rec = t.getName();
-					if(box.containsKey(rec)){
-						Location loc = box.get(rec);
-						if(loc.getBlock().getState() instanceof Chest){
-							Chest chest = (Chest) loc.getBlock().getState();
-							BlockState s = loc.getBlock().getRelative(BlockFace.UP).getState();
-							if(s instanceof Sign){
-								Sign sign = (Sign) s;
-								if(sign.getLine(0).contains("[Mailbox]")&&sign.getLine(1).contains(rec)){
-									chest.getBlockInventory().addItem(player.getItemInHand());
-									int count = 0;
-									for(ItemStack item:chest.getInventory().getContents()){
-										if(item!=null&&item.getType().equals(Material.WRITTEN_BOOK)) count = count+1;
-									}
-									sign.setLine(3, ChatColor.DARK_GRAY+String.valueOf(count)+" of 27");
-									sign.update();
-									player.setItemInHand(null);
-									sender.sendMessage(ChatColor.AQUA+"Mail Sent.");
-									if(t.isOnline()) t.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE+"You've got mail");
-								}else{
-									box.remove(rec);
-									sender.sendMessage(ChatColor.RED+"Mailbox not found.");
-								}
-							}else{
-								box.remove(rec);
-								sender.sendMessage(ChatColor.RED+"Mailbox not found.");
-							}
-						}else{
-							box.remove(rec);
-							sender.sendMessage(ChatColor.RED+"Mailbox not found.");
-						}
-					}else{
-						sender.sendMessage(ChatColor.RED+"Mailbox not found.");
-					}
-				}else{
-					sender.sendMessage(ChatColor.RED+"Player not found.");
-				}
-			}else{
-				sender.sendMessage(ChatColor.RED+"You must have a book in your hand");
-			}
-			
+		// Check if command sender is player
+		if(!(sender instanceof Player)){
+			sender.sendMessage(ChatColor.RED + "Only players may send mail.");
+			return true;
 		}
+		
+		// Check if command is formatted properly
+		if(args.length != 1) {
+			return false;
+		}
+		
+		// Check if player is allowed to send mail
+		Player player = (Player) sender;
+		if(!player.hasPermission("bookmailbox.command")){
+			sender.sendMessage(ChatColor.RED+"You do not have the required permissions.");
+			return true;
+		}
+		
+		// Check if player is holding book
+		if(!player.getItemInHand().getType().equals(Material.WRITTEN_BOOK)) {
+			sender.sendMessage(ChatColor.RED+"You must have a book in your hand");
+			return true;
+		}
+		
+		// Check if destination player exists
+		OfflinePlayer t = this.getServer().getOfflinePlayer(args[0]);
+		if (t == null) {
+			sender.sendMessage(ChatColor.RED + "Player not found.");
+			return true;
+		}
+		
+		// Check if destination mailbox exists
+		String rec = t.getName();
+		if (!box.containsKey(rec)) {
+			sender.sendMessage(ChatColor.RED + "Mailbox not found.");
+			return true;
+		}
+		
+		// Check if destination mailbox physically exists
+		Location loc = box.get(rec);
+		if (!(loc.getBlock().getState() instanceof Chest)) {
+			box.remove(rec);
+			sender.sendMessage(ChatColor.RED + "Mailbox not found.");
+			return true;
+		}
+		
+		// Check if sign is above mailbox chest
+		Chest chest = (Chest) loc.getBlock().getState();
+		BlockState s = loc.getBlock().getRelative(BlockFace.UP).getState();
+		if (!(s instanceof Sign)) {
+			box.remove(rec);
+			sender.sendMessage(ChatColor.RED+"Mailbox not found.");
+			return true;
+		}
+		
+		// Check if sign is mailbox sign
+		Sign sign = (Sign) s;
+		if(!sign.getLine(0).contains("[Mailbox]")) {
+			box.remove(rec);
+			sender.sendMessage(ChatColor.RED+"Mailbox not found.");
+			return true;
+		}
+		
+		// Check if mailbox is owned by destination player
+		if(!(sign.getLine(1) + sign.getLine(2)).contains(rec)) {
+			box.remove(rec);
+			sender.sendMessage(ChatColor.RED+"Mailbox not found.");
+			return true;
+		}
+		
+		// Checks complete
+		
+		
+		// Send book to player
+		chest.getBlockInventory().addItem(player.getItemInHand());
+		if(t.isOnline()) t.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE+"You've got mail");
+		
+		// Count new chest book count and update sign
+		int count = 0;
+		for(ItemStack item:chest.getInventory().getContents()){
+			if(item!=null&&item.getType().equals(Material.WRITTEN_BOOK)) count++;
+		}
+		sign.setLine(3, ChatColor.DARK_GRAY+String.valueOf(count)+" of 27");
+		sign.update();
+		
+		// Remove item from sender
+		player.setItemInHand(null);
+		sender.sendMessage(ChatColor.AQUA+"Mail Sent.");
+		
 		return true;
 	}
 }
