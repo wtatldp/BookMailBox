@@ -100,8 +100,8 @@ public class BookMailbox extends JavaPlugin implements Listener {
 					}
 					sign.setLine(0, ChatColor.DARK_BLUE+"[Mailbox]");
 					if (event.getPlayer().getName().length() > 15) {
-						sign.setLine(1, event.getPlayer().getName().substring(0, 15));
-						sign.setLine(2, event.getPlayer().getName().substring(15, 15));
+						sign.setLine(1, event.getPlayer().getName().substring(0, 13));
+						sign.setLine(2, event.getPlayer().getName().substring(13, 15));
 					} else {
 						sign.setLine(1, event.getPlayer().getName());
 						sign.setLine(2, "");
