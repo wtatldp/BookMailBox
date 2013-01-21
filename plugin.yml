@@ -1,6 +1,6 @@
 name: BookMailbox
 main: com.modcrafting.bookmailbox.BookMailbox
-version: 0.2.1
+version: 0.3
 website: http://modcrafting.com
 authors: [Deathmarine, MattFielding, PlanarWarp]
 description: >

@@ -3,6 +3,7 @@ package com.modcrafting.bookmailbox;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -99,13 +100,14 @@ public class BookMailbox extends JavaPlugin implements Listener {
 						}
 					}
 					sign.setLine(0, ChatColor.DARK_BLUE+"[Mailbox]");
-					if (event.getPlayer().getName().length() > 15) {
-						sign.setLine(1, event.getPlayer().getName().substring(0, 13));
-						sign.setLine(2, event.getPlayer().getName().substring(13, 15));
+					sign.setLine(1, ChatColor.DARK_GREEN + event.getPlayer().getName());
+					/*if (event.getPlayer().getName().length() > 15) {
+						sign.setLine(1, event.getPlayer().getName().substring(0, 14));
+						sign.setLine(2, event.getPlayer().getName().substring(14, 20));
 					} else {
 						sign.setLine(1, event.getPlayer().getName());
 						sign.setLine(2, "");
-					}
+					}*/
 					sign.setLine(3, ChatColor.DARK_GRAY+"0 of 27");
 					sign.update();
 					String name = event.getPlayer().getName();
@@ -120,21 +122,44 @@ public class BookMailbox extends JavaPlugin implements Listener {
 				}
 			}
 			if(event.getClickedBlock().getType().equals(Material.CHEST)){
-				if(event.getClickedBlock().getRelative(BlockFace.UP).getState() instanceof Sign){
-					Sign sign = (Sign) event.getClickedBlock().getRelative(BlockFace.UP).getState();
-					if(sign.getLine(0).contains("[Mailbox]")){
-						if((sign.getLine(1)+sign.getLine(2)).contains(event.getPlayer().getName())||event.getPlayer().hasPermission("bookmailbox.admin")){
-							int count = 0;
-							for(ItemStack item:((Chest)event.getClickedBlock().getState()).getInventory().getContents()){
-								if(item!=null&&item.getType().equals(Material.WRITTEN_BOOK)) count += 1;
-							}
-							sign.setLine(3, ChatColor.DARK_GRAY+String.valueOf(count)+" of 27");
-							sign.update();
-						}else{
+				YamlConfiguration config = (YamlConfiguration) this.getConfig();
+				String plName = event.getPlayer().getName();
+				// Check if player is owner of mailbox or administrator
+				if (event.getPlayer().hasPermission("bookmailbox.admin")
+					|| 	(  config.getString(plName + ".World") == event.getClickedBlock().getLocation().getWorld().getName()
+						&& config.getDouble(plName + ".X") == event.getClickedBlock().getLocation().getX()
+						&& config.getDouble(plName + ".Y") == event.getClickedBlock().getLocation().getY()
+						&& config.getDouble(plName + ".Z") == event.getClickedBlock().getLocation().getZ()
+						)
+					)
+				{
+					// If sign does not exist, do not try to change it but allow access
+					if(event.getClickedBlock().getRelative(BlockFace.UP).getState() instanceof Sign) {
+						Sign sign = (Sign) event.getClickedBlock().getRelative(BlockFace.UP).getState();
+						int count = 0;
+						for(ItemStack item:((Chest)event.getClickedBlock().getState()).getInventory().getContents()){
+							if(item!=null&&item.getType().equals(Material.WRITTEN_BOOK)) count += 1;
+						}
+						sign.setLine(3, ChatColor.DARK_GRAY+String.valueOf(count)+" of 27");
+						sign.update();
+					}
+				}
+				else { // Not owner or admin
+					// Check if chest is mailbox
+					Iterator<String> boxOwner = box.keySet().iterator();
+					while (boxOwner.hasNext()) {
+						Location loc = box.get(boxOwner.next());
+						if (loc.getWorld().getName() == event.getClickedBlock().getWorld().getName()
+							&& loc.getX() == event.getClickedBlock().getX()
+							&& loc.getY() == event.getClickedBlock().getY()
+							&& loc.getZ() == event.getClickedBlock().getZ()
+						   ) {
+							// Chest is a mailbox, not owned by player - deny access
 							event.setCancelled(true);
 							return;
 						}
 					}
+					
 				}
 			}
 		}
