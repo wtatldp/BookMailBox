@@ -1,15 +1,15 @@
 name: BookMailbox
 main: com.modcrafting.bookmailbox.BookMailbox
-version: 0.2
+version: 0.2.1
 website: http://modcrafting.com
-authors: [Deathmarine, MattFielding]
+authors: [Deathmarine, MattFielding, PlanarWarp]
 description: >
              Plugin for Bukkit.
              
 commands:
   mail:
     description: Command Access
-    usage: /<command>
+    usage: /<command> [player]
 permissions:
   bookmailbox.*:
     description: Allows the Administration to Full Control
